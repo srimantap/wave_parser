@@ -23,8 +23,13 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "log.h"
+#include "parse.h"
 
 #define HELP_STRING "\n"\
 "Usage: wave_parser [OPTIONS]\n"\
@@ -50,21 +55,27 @@ int main(int argc, char **argv) {
   char *verbose = NULL;
   int c;
 
+  int fd;
+
   opterr = 0;
   
+  /* FIXME: currently the parsing works with short option only.
+   *        Plan is to fix it with long option needs to be
+   *        taken care.
+   */
   /* Parse program options */
   while ((c = getopt (argc, argv, "hv:f:o:")) != -1)
     switch (c)
     {
       case 'f':
         filename = optarg;
-        log_info("filename = %s\n", filename); 
+        log_info("filename = %s .", filename);
         break;
       case 'v':
         verbose = optarg;
 
         if (log_set_level(verbose)) {
-          log_error("Wrong verbose level provided.\n");
+          log_error("Wrong verbose level provided.");
           exit(1);
         }
 
@@ -73,14 +84,35 @@ int main(int argc, char **argv) {
         printf("%s", HELP_STRING);
         break;
       case '?':
-        log_error("Invalid option. Use '-h' to see the help.\n");
+        log_error("Invalid option. Use '-h' to see the help.");
         exit(1);
       default:
         abort ();
     }
 
+  /* Input file validation */
   if (filename == NULL) {
-    log_error("Input file is missing. Use '-h' option for command option.\n"); 
+    log_error("Input file is missing. Use '-h' option for command option.");
+    exit(1);
+  }
+
+  /* open the input file provided */
+  fd = open (filename, O_RDONLY);
+  if (fd < 0) {
+    log_error("Unable to open the file : %s, errno = %d .", filename, errno);
+    exit(1);
+  }
+
+
+  /* parse the wave specification */
+  if (parse_wave(fd)) {
+    log_error("Error while parsing the file.");
+  }
+
+
+  /* close the file descriptor */
+  if (close(fd) < 0) {
+    log_error("Error closing the file, errno = %d.", errno);
     exit(1);
   }
 

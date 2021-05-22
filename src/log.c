@@ -41,6 +41,8 @@ void log_printf(int level, const char *fmt, ...)
   if (log_level > 0)
     vfprintf(stderr, fmt, ap);
 
+  fprintf(stderr, "\n");
+
   va_end(ap);
 
   return;
