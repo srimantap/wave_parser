@@ -22,25 +22,74 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "log.h"
- 
+
+#define LOG_TIME_LENGTH      25
+#define LOG_TIME_FORMAT      "%Y-%m-%d %H:%M:%S"
+#define LOG_LEVEL_LENGTH     10
+#define LOG_FILENAME_LENGTH  30
+#define LOG_MESSAGE_LENGTH   200
+
 static int log_level = LOG_DEFAULT;
 
+/* Log level strings */
+static const char *log_strings[] = {
+  "NONE", /* to match with enum, none = 0" */
+  "ERROR",
+  "WARN",
+  "DEBUG",
+  "INFO",
+};
+
+static const char *log_colors[] = {
+  "NONE", /* to match with enum, none = 0" */
+  "\x1b[31m",
+  "\x1b[33m",
+  "\x1b[36m",
+  "\x1b[32m",
+};
 
 void log_printf(int level, const char *fmt, ...)
 {
+  //char log_line[1024];
+
+  char log_time[LOG_TIME_LENGTH];
+  char log_type[LOG_LEVEL_LENGTH];
+  //char log_filename[LOG_FILENAME_LENGTH];
+  char log_message[LOG_MESSAGE_LENGTH];
+
   va_list ap;
+  time_t t;
+  struct tm *tmp;
 
   if (log_level < level)
-    return;
+      return;
 
-  /* draw out the vararg format */
+  /* print the time */
+  t = time(NULL);
+  tmp = localtime(&t);
+  if (tmp == NULL) {
+    perror("localtime");
+    return;
+  }
+
+  if (strftime(log_time, sizeof(log_time), LOG_TIME_FORMAT, tmp) == 0) {
+    fprintf(stderr, "strftime returned 0");
+    return;
+  }
+
+
+  /* print the level info */
+  snprintf(log_type, LOG_LEVEL_LENGTH, "%s", log_strings[level]);
+
   va_start(ap, fmt);
 
   if (log_level > 0)
-    vfprintf(stderr, fmt, ap);
+    vsnprintf(log_message, LOG_MESSAGE_LENGTH, fmt, ap);
 
+  fprintf(stderr, "%-25s %s%-10s\x1b[0m %-80s", log_time, log_colors[level], log_type, log_message);
   fprintf(stderr, "\n");
 
   va_end(ap);
@@ -64,12 +113,12 @@ int log_set_level(const char *str)
   }
 
   if (endptr == str) {
-    log_warning("No digits were found\n");
+    log_warning("No digits were found");
     return 1;
   }
 
   if (*endptr != '\0') {        /* Not necessarily an error... */
-    log_warning("Further characters after number: %s\n", endptr);
+    log_warning("Further characters after number: %s", endptr);
     return 1;
   }
 
@@ -80,7 +129,7 @@ int log_set_level(const char *str)
 
   /* If we got here, strtol() successfully parsed a number */
   log_level = val;
-  log_debug("Verbose level = %ld\n", val); 
+  log_debug("Verbose level = %ld", val);
 
   return 0;
 }

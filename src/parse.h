@@ -23,11 +23,30 @@
 #define __PARSE_H__
 
 #include <stdio.h>
+#include <stdint.h>
+
+/* Error codes */
+enum error_code {
+  ERROR_INVALID_FD         = -1,
+  ERROR_INVALID_SIZE       = -2,
+  SUCESS                   = 0,
+};
+
+/* Header sizes */
+enum wave_fmt_size {
+  SIZE_CHUNK_ID = 4,
+};
+
+struct wave_format {
+
+  uint8_t chunk_id[4];
+
+};
 
 /*
  *
  */
-int parse_wave(int fd);
-int test_func();
+int parse_wave(char *wavefile);
+
 
 #endif /* end of __PARSE_H__ */

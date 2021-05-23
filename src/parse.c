@@ -19,19 +19,74 @@
  *
  */
 #include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "log.h"
+#include "parse.h"
 
-int test_func() {
-  return 0;
-}
+static int fd = -1;
 
-int parse_wave(int fd) {
+static int read_requested_size (void *buf, int size) {
 
+  ssize_t read_bytes;
 
   if (fd < 0) {
+    return ERROR_INVALID_FD;
+  }
+
+  read_bytes = read(fd, buf, size);
+
+  if ((read_bytes == -1) || (read_bytes < size)) {
+    return ERROR_INVALID_SIZE;
+  }
+
+  return SUCESS;
+}
+
+static int parse_chunk_id(void *buf) {
+
+  if (read_requested_size(buf, SIZE_CHUNK_ID) < 0) {
     return -1;
   }
 
+  log_debug("Read complete.");
   return 0;
+}
+
+/*
+ *
+ */
+int parse_wave(char *wavefile) {
+
+  struct wave_format wf;
+
+  log_warning("Start parsing of wave file %s", wavefile);
+
+  /* open the input file provided */
+  fd = open (wavefile, O_RDONLY);
+  if (fd < 0) {
+    log_error("Unable to open the file : %s, errno = %d .", wavefile, errno);
+    return -1;
+  }
+
+  /* read chunk id */
+  if(parse_chunk_id(&wf.chunk_id) < 0) {
+    log_error("Invalid chunk id");
+    goto out;
+  }
+
+  return 0;
+
+out:
+  /* close the file descriptor */
+  if (close(fd) < 0) {
+    log_error("Error closing the file, errno = %d.", errno);
+  }
+
+  return -1;
 }

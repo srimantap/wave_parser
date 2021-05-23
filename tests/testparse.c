@@ -2,11 +2,15 @@
 #include <check.h>
 
 #include "../src/parse.h"
+#include "../src/log.h"
 
-START_TEST(test_test_func)
+#define WRONG_FILE "/wrong/path/to/a/file"
+
+
+START_TEST(test_parse_wave_invalid_file)
 {
 
-  ck_assert_int_eq(test_func(), 0);
+  ck_assert_int_eq(parse_wave(WRONG_FILE), -1);
 }
 END_TEST
 
@@ -20,7 +24,7 @@ Suite * money_suite(void)
   /* Core test case */
   tc_core = tcase_create("Parse");
 
-  tcase_add_test(tc_core, test_test_func);
+  tcase_add_test(tc_core, test_parse_wave_invalid_file);
   suite_add_tcase(s, tc_core);
 
   return s;

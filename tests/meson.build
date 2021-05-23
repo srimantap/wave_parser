@@ -16,7 +16,10 @@ foreach t : tests_list
   end  = link_file.split('/')[-1]
   name = end.split('.')[0]
 
-  ld_link = library(name, link_file)
+  # Log file needs to be linked always
+  src = [link_file, '../src/log.c']
+
+  ld_link = library(name, src)
 
   e = executable(test_name, 
           file_name, 

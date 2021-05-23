@@ -25,13 +25,15 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define LOG_ERROR   1
-#define LOG_WARNING 2
-#define LOG_DEBUG   3
-#define LOG_INFO    4
-
 #define LOG_DEFAULT    LOG_ERROR
 #define LOG_MAX        LOG_INFO
+
+enum {
+  LOG_ERROR = 1,
+  LOG_WARNING,
+  LOG_DEBUG,
+  LOG_INFO,
+};
 
 #define log_error(format, ...) \
   do { \

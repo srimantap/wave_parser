@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <errno.h>
 
 #include "log.h"
@@ -55,8 +54,6 @@ int main(int argc, char **argv) {
   char *verbose = NULL;
   int c;
 
-  int fd;
-
   opterr = 0;
   
   /* FIXME: currently the parsing works with short option only.
@@ -69,13 +66,13 @@ int main(int argc, char **argv) {
     {
       case 'f':
         filename = optarg;
-        log_info("filename = %s .", filename);
+        log_info("Input filename = %s", filename);
         break;
       case 'v':
         verbose = optarg;
 
         if (log_set_level(verbose)) {
-          log_error("Wrong verbose level provided.");
+          log_error("Wrong verbose level provided");
           exit(1);
         }
 
@@ -84,7 +81,7 @@ int main(int argc, char **argv) {
         printf("%s", HELP_STRING);
         break;
       case '?':
-        log_error("Invalid option. Use '-h' to see the help.");
+        log_error("Invalid option. Use '-h' to see the help");
         exit(1);
       default:
         abort ();
@@ -92,29 +89,15 @@ int main(int argc, char **argv) {
 
   /* Input file validation */
   if (filename == NULL) {
-    log_error("Input file is missing. Use '-h' option for command option.");
+    log_error("Input file is missing. Use '-h' option for command option");
     exit(1);
   }
-
-  /* open the input file provided */
-  fd = open (filename, O_RDONLY);
-  if (fd < 0) {
-    log_error("Unable to open the file : %s, errno = %d .", filename, errno);
-    exit(1);
-  }
-
 
   /* parse the wave specification */
-  if (parse_wave(fd)) {
+  if (!parse_wave(filename)) {
     log_error("Error while parsing the file.");
-  }
-
-
-  /* close the file descriptor */
-  if (close(fd) < 0) {
-    log_error("Error closing the file, errno = %d.", errno);
     exit(1);
   }
 
-  return 0;
+  exit(0);
 }
