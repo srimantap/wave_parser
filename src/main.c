@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
   char *filename = NULL;
   char *verbose = NULL;
   int c;
+  struct wave_format wave_fmt;
 
   opterr = 0;
   
@@ -94,7 +95,7 @@ int main(int argc, char **argv) {
   }
 
   /* parse the wave specification */
-  if (!parse_wave(filename)) {
+  if (parse_wave(filename, &wave_fmt) != 0) {
     log_error("Error while parsing the file.");
     exit(1);
   }
