@@ -37,6 +37,7 @@ static int log_level = LOG_DEFAULT;
 /* Log level strings */
 static const char *log_strings[] = {
   "NONE", /* to match with enum, none = 0" */
+  "MESSAGE",
   "ERROR",
   "WARN",
   "DEBUG",
@@ -45,6 +46,7 @@ static const char *log_strings[] = {
 
 static const char *log_colors[] = {
   "NONE", /* to match with enum, none = 0" */
+  "\x1b[37m",
   "\x1b[31m",
   "\x1b[33m",
   "\x1b[36m",

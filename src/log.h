@@ -25,15 +25,21 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define LOG_DEFAULT    LOG_ERROR
+#define LOG_DEFAULT    LOG_WARNING
 #define LOG_MAX        LOG_INFO
 
 enum {
-  LOG_ERROR = 1,
+  LOG_MESSAGE = 1,
+  LOG_ERROR,
   LOG_WARNING,
   LOG_DEBUG,
   LOG_INFO,
 };
+
+#define log_message(format, ...) \
+  do { \
+    log_printf(LOG_MESSAGE, format, ##__VA_ARGS__); \
+  } while(0)
 
 #define log_error(format, ...) \
   do { \

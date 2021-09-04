@@ -32,7 +32,7 @@
 
 static FILE *fd = NULL;
 
-static int read_requested_size (void *buf, int size, int endieness) {
+static int read_requested_size (void *buf, int size) {
 
   ssize_t read_bytes;
 
@@ -58,7 +58,7 @@ static int parse_char(char **buf, int size) {
     return -1;
   }
 
-  if (read_requested_size(temp, size, BIG_ENDIEN) < 0) {
+  if (read_requested_size(temp, size) < 0) {
     return -1;
   }
 
@@ -70,7 +70,7 @@ static int parse_char(char **buf, int size) {
 
 static int parse_int16(uint16_t *buf) {
 
-  if (read_requested_size(buf, sizeof(uint16_t), LITTLE_ENDIEN) < 0) {
+  if (read_requested_size(buf, sizeof(uint16_t)) < 0) {
     return -1;
   }
 
@@ -79,13 +79,36 @@ static int parse_int16(uint16_t *buf) {
 
 static int parse_int32(uint32_t *buf) {
 
-  if (read_requested_size(buf, sizeof(uint32_t), LITTLE_ENDIEN) < 0) {
+  if (read_requested_size(buf, sizeof(uint32_t)) < 0) {
     return -1;
   }
 
   return SUCESS;
 }
 
+static int print_wave_header(struct wave_format *wf) {
+
+  log_message(" ");
+  log_message("Header Information");
+  log_message("==================");
+  log_message(" ");
+  log_message("  ChunkID        :  %s", wf->chunk_id);
+  log_message("  ChunkSize      :  %d", wf->chunk_size);
+  log_message("  Format         :  %s", wf->format);
+  log_message("  Subchunk1ID    :  %s", wf->sub_chunk1_id);
+  log_message("  Subchunk1Size  :  %d", wf->sub_chunk1_size);
+  log_message("  AudioFormat    :  %d", wf->audio_format);
+  log_message("  NumChannels    :  %d", wf->nbr_channels);
+  log_message("  SampleRate     :  %d", wf->sample_rate);
+  log_message("  ByteRate       :  %d", wf->byte_rate);
+  log_message("  BlockAlign     :  %d", wf->block_align);
+  log_message("  BitsPerSample  :  %d", wf->bits_per_sample);
+  log_message("  Subchunk2ID    :  %s", wf->sub_chunk2_id);
+  log_message("  Subchunk2Size  :  %d", wf->sub_chunk2_size);
+  log_message(" ");
+  
+  return SUCESS;
+}
 
 /*
  *
@@ -94,7 +117,7 @@ int parse_wave(char *wavefile, struct wave_format *wf) {
 
   long file_position;
 
-  log_debug("Start parsing of wave file %s", wavefile);
+  log_message("Start parsing of wave file %s", wavefile);
 
   /* open the input file provided */
   fd = fopen (wavefile, "r");
@@ -189,6 +212,7 @@ int parse_wave(char *wavefile, struct wave_format *wf) {
 
   log_info("Position in the file, %d", file_position);
 
+  print_wave_header(wf);
 
 
 
