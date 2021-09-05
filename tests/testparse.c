@@ -16,54 +16,46 @@ START_TEST(test_parse_wave_invalid_file)
 }
 END_TEST
 
-START_TEST(test_parse_wave_valid)
+static void validate_basic_part(struct wave_format *wfmt)
 {
 
-  struct wave_format wf;
-  uint32_t size;
-  uint16_t size_16;
-
-  ck_assert_int_eq(parse_wave(WAV_FILE, &wf), 0);
-
+  log_info("wfmt->chunk_id, %p", wfmt->chunk_id);
   //validate chunk id
-  //ck_assert_str_eq(wf.chunk_id, "RIFF");
+  ck_assert_str_eq(wfmt->chunk_id, "RIFF");
 
   //validate chunk size
-  size = *(uint32_t *) &wf.chunk_size;
-  ck_assert_int_eq(size, 32036);
+  ck_assert_int_eq(wfmt->chunk_size, 32036);
 
   //validate format
-  //ck_assert_str_eq(str_format, "WAVE");
+  ck_assert_str_eq(wfmt->format, "WAVE");
 
   //validate SubChunk1Id
-  //ck_assert_str_eq(str_sub_chunk1_id, "fmt ");
+  ck_assert_str_eq(wfmt->sub_chunk1_id, "fmt ");
 
   //validate SubChunk1Size
-  size = wf.sub_chunk1_size;
-  ck_assert_int_eq(size, 16);
+  ck_assert_int_eq(wfmt->sub_chunk1_size, 16);
 
   //validate Audio Format
-  size_16 = *(uint16_t *) &wf.audio_format;
-  ck_assert_int_eq(size_16, 1);
+  ck_assert_int_eq(wfmt->audio_format, 1);
 
   //validate NumChannel
-  uint16_t nbr_channels= *(uint16_t *) &wf.nbr_channels;
+  uint16_t nbr_channels= wfmt->nbr_channels;
   ck_assert_int_eq(nbr_channels, 1);
 
   //validate sample rate
-  uint32_t sample_rate = *(uint32_t *) &wf.sample_rate;
+  uint32_t sample_rate = wfmt->sample_rate;
   ck_assert_int_eq(sample_rate, 16000);
 
   //validate byte rate
-  uint32_t byte_rate = *(uint32_t *) &wf.byte_rate;
+  uint32_t byte_rate = wfmt->byte_rate;
   ck_assert_int_eq(byte_rate, 32000);
 
   //validate Block Align
-  uint16_t block_align = *(uint16_t *) &wf.block_align;
+  uint16_t block_align = wfmt->block_align;
   ck_assert_int_eq(block_align, 2);
 
   //validate Bits per Sample
-  uint16_t bps = *(uint16_t *) &wf.bits_per_sample;
+  uint16_t bps = wfmt->bits_per_sample;
   ck_assert_int_eq(bps, 16);
 
   // Validate block align
@@ -73,15 +65,30 @@ START_TEST(test_parse_wave_valid)
   // ByteRate = SampleRate * NumChannels * BitsPerSample/8
   ck_assert_int_eq(byte_rate, ((sample_rate * nbr_channels * bps) / 8));
 
+  return;
+}
+
+START_TEST(test_parse_wave_valid_data_chunk)
+{
+
+  struct wave_format wf;
+
+  //log_set_level(LOG_INFO);
+  ck_assert_int_eq(parse_wave(WAV_FILE, &wf), 0);
+
+  validate_basic_part(&wf);
+
   //validate SubChunk2Id
-  //ck_assert_str_eq(str_sub_chunk2_id, "data");
+  ck_assert_str_eq(wf.sub_chunk2_id, "data");
 
   //validate SubChunk2Size
-  uint32_t sub_chunk2_size = *(uint32_t *) &wf.sub_chunk2_size;
+  uint32_t sub_chunk2_size = wf.sub_chunk2_size;
   ck_assert_int_eq(sub_chunk2_size, 32000);
 
   // Subchunk2Size = NumSamples * NumChannels * BitsPerSample/8
-  ck_assert_int_eq(sub_chunk2_size, ((sample_rate * nbr_channels * bps) / 8));
+  ck_assert_int_eq(wf.sub_chunk2_size, ((wf.sample_rate * wf.nbr_channels * wf.bits_per_sample) / 8));
+
+  parse_finalize(&wf);
 }
 END_TEST
 
@@ -96,7 +103,7 @@ Suite * wave_parse_suite(void)
   tc_core = tcase_create("Parse");
 
   tcase_add_test(tc_core, test_parse_wave_invalid_file);
-  tcase_add_test(tc_core, test_parse_wave_valid);
+  tcase_add_test(tc_core, test_parse_wave_valid_data_chunk);
   suite_add_tcase(s, tc_core);
 
   return s;

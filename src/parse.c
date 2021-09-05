@@ -30,6 +30,9 @@
 #include "log.h"
 #include "parse.h"
 
+#define LIST_CHUNK_TYPE "LIST"
+#define DATA_CHUNK_TYPE "data"
+
 static FILE *fd = NULL;
 
 static int read_requested_size (void *buf, int size) {
@@ -65,6 +68,7 @@ static int parse_char(char **buf, int size) {
   temp[SIZE_CHUNK_ID] = '\0';
   *buf = temp;
 
+  log_info("adress buf %p, value %s", *buf, *buf);
   return SUCESS;
 }
 
@@ -86,7 +90,7 @@ static int parse_int32(uint32_t *buf) {
   return SUCESS;
 }
 
-static int print_wave_header(struct wave_format *wf) {
+void parse_print_wave_header(struct wave_format *wf) {
 
   log_message(" ");
   log_message("Header Information");
@@ -107,7 +111,7 @@ static int print_wave_header(struct wave_format *wf) {
   log_message("  Subchunk2Size  :  %d", wf->sub_chunk2_size);
   log_message(" ");
   
-  return SUCESS;
+  return;
 }
 
 /*
@@ -204,6 +208,15 @@ int parse_wave(char *wavefile, struct wave_format *wf) {
     goto out;
   }
 
+  if (strncasecmp(wf->sub_chunk2_id, LIST_CHUNK_TYPE, 4) == 0) {
+    log_debug("Found LIST chunk type");
+  } else if (strncasecmp(wf->sub_chunk2_id, DATA_CHUNK_TYPE, 4) == 0) {
+    log_debug("Found DATA chunk type");
+  } else {
+    log_error("Unknown chunk, exiting");
+    goto out;
+  }
+
   file_position = ftell(fd);
   if (file_position == -1) {
     log_error("Failed to get current postion");
@@ -211,32 +224,9 @@ int parse_wave(char *wavefile, struct wave_format *wf) {
   }
 
   log_info("Position in the file, %d", file_position);
-
-  print_wave_header(wf);
-
+  
 
 
-
-
-  if (wf->chunk_id != NULL) {
-    free(wf->chunk_id);
-  }
-
-  if (wf->format != NULL) {
-    free(wf->format);
-  }
-
-  if (wf->sub_chunk1_id != NULL) {
-    free(wf->sub_chunk1_id);
-  }
-
-  if (wf->sub_chunk2_id != NULL) {
-    free(wf->sub_chunk2_id);
-  }
-
-  if (fclose(fd) < 0) {
-    log_error("Error closing the file, errno = %d.", errno);
-  }
 
   return 0;
 
@@ -263,4 +253,27 @@ out:
   }
 
   return -1;
+}
+
+void parse_finalize(struct wave_format *wf) {
+  if (wf->chunk_id != NULL) {
+    free(wf->chunk_id);
+  }
+
+  if (wf->format != NULL) {
+    free(wf->format);
+  }
+
+  if (wf->sub_chunk1_id != NULL) {
+    free(wf->sub_chunk1_id);
+  }
+
+  if (wf->sub_chunk2_id != NULL) {
+    free(wf->sub_chunk2_id);
+  }
+
+  if (fclose(fd) < 0) {
+    log_error("Error closing the file, errno = %d.", errno);
+  }
+
 }

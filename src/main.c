@@ -94,11 +94,17 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  /* parse the wave specification */
+  /* parse the wave file */
   if (parse_wave(filename, &wave_fmt) != 0) {
     log_error("Error while parsing the file.");
     exit(1);
   }
+
+  /* print the wave header */
+  parse_print_wave_header(&wave_fmt);
+
+  /* finalize */
+  parse_finalize(&wave_fmt);
 
   exit(0);
 }

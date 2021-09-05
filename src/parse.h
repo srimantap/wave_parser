@@ -70,6 +70,7 @@ struct wave_format {
   uint16_t bits_per_sample;
   char *sub_chunk2_id;
   uint32_t sub_chunk2_size;
+  uint8_t *data;
 
 };
 
@@ -77,6 +78,7 @@ struct wave_format {
  *
  */
 int parse_wave(char *wavefile, struct wave_format *wf);
-
+void parse_print_wave_header(struct wave_format *wf);
+void parse_finalize(struct wave_format *wf);
 
 #endif /* end of __PARSE_H__ */
