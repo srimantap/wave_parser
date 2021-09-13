@@ -72,6 +72,23 @@ static int parse_char(char **buf, int size) {
   return SUCESS;
 }
 
+static int parse_int8(uint8_t **buf, uint32_t size) {
+
+  uint8_t *temp = (uint8_t *) malloc (size * sizeof(uint8_t));
+  if (temp == NULL) {
+    log_error("malloc error : parse_int8");
+    return -1;
+  }
+
+  if (read_requested_size(temp, size) < 0) {
+    return -1;
+  }
+
+  *buf = temp;
+
+  return SUCESS;
+}
+
 static int parse_int16(uint16_t *buf) {
 
   if (read_requested_size(buf, sizeof(uint16_t)) < 0) {
@@ -107,11 +124,47 @@ void parse_print_wave_header(struct wave_format *wf) {
   log_message("  ByteRate       :  %d", wf->byte_rate);
   log_message("  BlockAlign     :  %d", wf->block_align);
   log_message("  BitsPerSample  :  %d", wf->bits_per_sample);
-  log_message("  Subchunk2ID    :  %s", wf->sub_chunk2_id);
-  log_message("  Subchunk2Size  :  %d", wf->sub_chunk2_size);
+
+  if (wf->chunks != NULL) {
+    log_message("  Subchunk2ID    :  %s", wf->chunks->sub_chunk2_id);
+    log_message("  Subchunk2Size  :  %d", wf->chunks->sub_chunk2_size);
+  }
+
   log_message(" ");
   
   return;
+}
+
+static struct chunk *chunks_init() {
+  struct chunk *temp;
+
+  temp = (struct chunk *) malloc(sizeof(struct chunk));
+  if (temp == NULL) {
+    return NULL;
+  }
+
+  temp->sub_chunk2_id = NULL;
+  temp->next = NULL;
+
+  return temp;
+}
+
+static void chunks_finalize(struct chunk *chunks) {
+
+  struct chunk *temp = chunks;
+
+  if (strncasecmp(temp->sub_chunk2_id, DATA_CHUNK_TYPE, 4) == 0) {
+    free(temp->data);
+  }
+ 
+  if (temp->sub_chunk2_id != NULL) {
+    free(temp->sub_chunk2_id);
+  }
+
+  if (temp != NULL) {
+    free(chunks);
+  }
+
 }
 
 /*
@@ -119,7 +172,7 @@ void parse_print_wave_header(struct wave_format *wf) {
  */
 int parse_wave(char *wavefile, struct wave_format *wf) {
 
-  long file_position;
+  long file_offset;
 
   log_message("Start parsing of wave file %s", wavefile);
 
@@ -196,34 +249,64 @@ int parse_wave(char *wavefile, struct wave_format *wf) {
     goto out;
   }
 
-  /* read SubChunk2Id */
-  if(parse_char(&wf->sub_chunk2_id, SIZE_SUB_CHUNK2_ID) < 0) {
-    log_error("Invalid SubChunkId2");
-    goto out;
-  }
-
-  /* read SubChunk2Size */
-  if(parse_int32(&wf->sub_chunk2_size) < 0) {
-    log_error("Invalid SubChunkSize2");
-    goto out;
-  }
-
-  if (strncasecmp(wf->sub_chunk2_id, LIST_CHUNK_TYPE, 4) == 0) {
-    log_debug("Found LIST chunk type");
-  } else if (strncasecmp(wf->sub_chunk2_id, DATA_CHUNK_TYPE, 4) == 0) {
-    log_debug("Found DATA chunk type");
-  } else {
-    log_error("Unknown chunk, exiting");
-    goto out;
-  }
-
-  file_position = ftell(fd);
-  if (file_position == -1) {
+  file_offset = ftell(fd);
+  if (file_offset == -1) {
     log_error("Failed to get current postion");
     goto out;
   }
 
-  log_info("Position in the file, %d", file_position);
+  log_info("Position in the file, %d", file_offset);
+
+  wf->chunks = chunks_init();
+  if (wf->chunks == NULL) {
+    log_error("Failed allocate chunk memory");
+    goto out;
+  }
+
+  while(file_offset < wf->chunk_size) {
+
+    /* read SubChunk2Id */
+    if(parse_char(&wf->chunks->sub_chunk2_id, SIZE_SUB_CHUNK2_ID) < 0) {
+      log_error("Invalid SubChunkId2");
+      goto out;
+    }
+
+    // Increase the offset for byte read for SubChunk2Id
+    file_offset += SIZE_SUB_CHUNK2_ID;
+
+    /* read SubChunk2Size */
+    if(parse_int32(&wf->chunks->sub_chunk2_size) < 0) {
+      log_error("Invalid SubChunkSize2");
+      goto out;
+    }
+
+    // Increase the offset by bytes read for SubChunk2Size
+    file_offset += SIZE_SUB_CHUNK2_SIZE;
+
+    if (strncasecmp(wf->chunks->sub_chunk2_id, LIST_CHUNK_TYPE, 4) == 0) {
+      log_debug("Found LIST chunk type");
+    } else if (strncasecmp(wf->chunks->sub_chunk2_id, DATA_CHUNK_TYPE, 4) == 0) {
+
+      log_debug("Found DATA chunk type");
+
+      // Increase the bytes read for real data chunk
+      file_offset += wf->chunks->sub_chunk2_size;
+
+      if(parse_int8(&wf->chunks->data, wf->chunks->sub_chunk2_size) < 0) {
+        log_error("Error parsing data chunk, size %d, wf->chunks->sub_chunk2_size");
+        goto out;
+      }
+
+    } else {
+      log_error("Unknown chunk, exit with failure");
+      goto out;
+    }
+
+  }
+
+
+
+
   
 
 
@@ -232,25 +315,7 @@ int parse_wave(char *wavefile, struct wave_format *wf) {
 
 out:
   /* close the file descriptor */
-  if (fclose(fd) < 0) {
-    log_error("Error closing the file, errno = %d.", errno);
-  }
-
-  if (wf->chunk_id != NULL) {
-    free(wf->chunk_id);
-  }
-
-  if (wf->format != NULL) {
-    free(wf->format);
-  }
-
-  if (wf->sub_chunk1_id != NULL) {
-    free(wf->sub_chunk1_id);
-  }
-
-  if (wf->sub_chunk2_id != NULL) {
-    free(wf->sub_chunk2_id);
-  }
+  parse_finalize(wf);
 
   return -1;
 }
@@ -268,8 +333,8 @@ void parse_finalize(struct wave_format *wf) {
     free(wf->sub_chunk1_id);
   }
 
-  if (wf->sub_chunk2_id != NULL) {
-    free(wf->sub_chunk2_id);
+  if (wf->chunks != NULL) {
+    chunks_finalize(wf->chunks);
   }
 
   if (fclose(fd) < 0) {

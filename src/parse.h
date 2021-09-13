@@ -55,6 +55,25 @@ enum wave_fmt_size {
   SIZE_SUB_CHUNK2_SIZE  = 4,
 };
 
+struct list_type_info {
+  char *type_id;
+  uint32_t *info_size;
+  char *info_text;
+  struct list_type_info *next;
+};
+
+struct chunk {
+  char *sub_chunk2_id;
+  uint32_t sub_chunk2_size;
+
+  union {
+    uint8_t *data;
+    struct list_type_info *info;
+  };
+
+  struct chunk *next;
+};
+
 struct wave_format {
 
   char *chunk_id;
@@ -68,10 +87,9 @@ struct wave_format {
   uint32_t byte_rate;
   uint16_t block_align;
   uint16_t bits_per_sample;
-  char *sub_chunk2_id;
-  uint32_t sub_chunk2_size;
   uint8_t *data;
 
+  struct chunk *chunks;
 };
 
 /*
