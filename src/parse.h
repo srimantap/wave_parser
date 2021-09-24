@@ -29,6 +29,10 @@
 enum error_code {
   ERROR_INVALID_FD         = -1,
   ERROR_INVALID_SIZE       = -2,
+  ERROR_OTHER              = -3,
+  ERROR_READ_CHAR          = -4,
+  ERROR_READ_INT           = -5,
+  ERROR_ALLOC              = -6,
   SUCESS                   = 0,
 };
 
@@ -40,24 +44,30 @@ enum wave_endieness {
 
 /* Header sizes */
 enum wave_fmt_size {
-  SIZE_CHUNK_ID         = 4,
-  SIZE_CHUNK_SIZE       = 4,
-  SIZE_FORMAT           = 4,
-  SIZE_SUB_CHUNK1_ID    = 4,
-  SIZE_SUB_CHUNK1_SIZE  = 4,
-  SIZE_AUDIO_FORMAT     = 2,
-  SIZE_NBR_CHANNELS     = 2,
-  SIZE_SAMPLE_RATE      = 4,
-  SIZE_BYTE_RATE        = 4,
-  SIZE_BLOCK_ALIGN      = 2,
-  SIZE_BITS_PER_SAMPLE  = 2,
-  SIZE_SUB_CHUNK2_ID    = 4,
-  SIZE_SUB_CHUNK2_SIZE  = 4,
+  SIZE_CHUNK_ID              = 4,
+  SIZE_CHUNK_SIZE            = 4,
+  SIZE_FORMAT                = 4,
+  SIZE_SUB_CHUNK1_ID         = 4,
+  SIZE_SUB_CHUNK1_SIZE       = 4,
+  SIZE_AUDIO_FORMAT          = 2,
+  SIZE_NBR_CHANNELS          = 2,
+  SIZE_SAMPLE_RATE           = 4,
+  SIZE_BYTE_RATE             = 4,
+  SIZE_BLOCK_ALIGN           = 2,
+  SIZE_BITS_PER_SAMPLE       = 2,
+  SIZE_SUB_CHUNK2_ID         = 4,
+  SIZE_SUB_CHUNK2_SIZE       = 4,
+
+  // LIST CHUNK SPECIFIC
+  SIZE_LIST_TYPE_ID          = 4,
+  SIZE_LIST_INFO_ID          = 4,
+  SIZE_LIST_INFO_TEXT_SIZE   = 4,
+
 };
 
 struct list_type_info {
-  char *type_id;
-  uint32_t *info_size;
+  char *info_id;
+  uint32_t info_size;
   char *info_text;
   struct list_type_info *next;
 };
@@ -87,7 +97,6 @@ struct wave_format {
   uint32_t byte_rate;
   uint16_t block_align;
   uint16_t bits_per_sample;
-  uint8_t *data;
 
   struct chunk *chunks;
 };

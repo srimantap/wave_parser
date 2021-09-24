@@ -111,9 +111,6 @@ START_TEST(test_parse_wave_valid_list_chunk)
   uint32_t sub_chunk2_size = wf.chunks->sub_chunk2_size;
   ck_assert_int_eq(sub_chunk2_size, 26);
 
-  // Subchunk2Size = NumSamples * NumChannels * BitsPerSample/8
-  //ck_assert_int_eq(wf.sub_chunk2_size, ((wf.sample_rate * wf.nbr_channels * wf.bits_per_sample) / 8));
-
   parse_finalize(&wf);
 }
 END_TEST
