@@ -4,4 +4,4 @@ src = [
         'parse.c'
       ]
 
-executable('wave_parser', src)
+executable('wave_parser', src, install : true)
