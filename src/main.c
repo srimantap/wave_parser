@@ -42,10 +42,11 @@
 "                             default is set to standard output\n"\
 "    -v, --verbose            set the log level for debugging\n"\
 "                             values:\n"\
-"                                 ERROR   = 1, default\n"\
-"                                 WARNING = 2\n"\
-"                                 DEBUG   = 3\n"\
-"                                 INFO    = 4\n"
+"                                 MESSAGE = 1,\n"\
+"                                 ERROR   = 2,\n"\
+"                                 WARNING = 3, default\n"\
+"                                 DEBUG   = 4\n"\
+"                                 INFO    = 5\n"
 
 
 int main(int argc, char **argv) {
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
         break;
       case 'h':
         printf("%s", HELP_STRING);
-        break;
+        exit(0);
       case '?':
         log_error("Invalid option. Use '-h' to see the help");
         exit(1);
