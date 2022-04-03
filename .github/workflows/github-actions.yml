@@ -1,0 +1,32 @@
+name: GitHub Wave Parser Action
+on: [push]
+jobs:
+  Explore-GitHub-Actions:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Job triggered by a ${{ github.event_name }} event on ${{ github.ref }}."
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.x'
+      - name: Install Meson
+        run: pip install meson ninja
+      - name: Install libcheck
+        run: sudo apt-get install check
+      - name: Configure wave parser
+        run: meson setup builddir
+        env:
+          CC: gcc
+      - name: Run unit test
+        run: meson test -C builddir -v
+      - uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: Test log on Failures
+          path: builddir/meson-logs/testlog.txt
+      - name: Status
+        run: echo "This job's status is ${{ job.status }}."
+
